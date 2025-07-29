@@ -142,10 +142,18 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
     CI_WIKI_NAME = "HPE_Storage_CI"
 
     def __init__(self, *args, **kwargs):
+        # 1] which file calls this: cinder interface
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Cinder-Core
         super(HPE3PARISCSIDriver, self).__init__(*args, **kwargs)
         self.protocol = constants.ISCSI
 
     def _do_setup(self, common):
+        # 1] which file calls this: cinder interface
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Hybrid
         client_obj = common.client
         is_primera = client_obj.is_primera_array()
         if is_primera:
@@ -170,6 +178,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
             self._logout(common)
 
     def _update_dicts(self, temp_iscsi_ip, iscsi_ip_list, ip, port):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Cinder-Core
         ip_port = temp_iscsi_ip[ip]['ip_port']
         iscsi_ip_list[ip] = {'ip_port': ip_port,
                              'nsp': port['nsp'],
@@ -178,6 +190,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
 
     def initialize_iscsi_ports(self, common,
                                remote_target=None, remote_client=None):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls common.get_active_iscsi_target_ports
+        # 3] dependency type: simple
+        # 4] function type: Hybrid
         # map iscsi_ip-> ip_port
         #             -> iqn
         #             -> nsp
@@ -274,6 +290,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
                                      target_portal_ips,
                                      existing_vluns, iscsi_ip,
                                      lun_id, port):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls common.build_portPos
+        # 3] dependency type: simple
+        # 4] function type: Hybrid
         vlun = None
         # check for an already existing VLUN matching the
         # nsp for this iSCSI IP. If one is found, use it
@@ -317,6 +337,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
                                       host, iscsi_ips, ready_ports,
                                       target_portals, target_iqns, target_luns,
                                       remote_client=None):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls common.find_existing_vluns
+        # 3] dependency type: simple
+        # 4] function type: Hybrid
 
         # Target portal ips are defined in cinder.conf.
         target_portal_ips = iscsi_ips.keys()
@@ -370,6 +394,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
     @volume_utils.trace
     @coordination.synchronized('3par-{volume.id}')
     def initialize_connection(self, volume, connector):
+        # 1] which file calls this: cinder interface
+        # 2] cyclic dependency: yes. it calls common.find_existing_vlun
+        # 3] dependency type: simple
+        # 4] function type: Hybrid
         """Assigns the volume to a server.
 
         Assign any created volume to a compute node/host so that it can be
@@ -554,6 +582,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
     @volume_utils.trace
     @coordination.synchronized('3par-{volume.id}')
     def terminate_connection(self, volume, connector, **kwargs):
+        # 1] which file calls this: cinder interface
+        # 2] cyclic dependency: yes. it calls common.terminate_connection
+        # 3] dependency type: simple
+        # 4] function type: Cinder-Core
         """Driver entry point to detach a volume from an instance."""
         array_id = self.get_volume_replication_driver_data(volume)
         common = self._login(array_id=array_id)
@@ -606,6 +638,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
             self._logout(common)
 
     def _clear_chap_3par(self, common, volume):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls common._get_3par_vol_name
+        # 3] dependency type: simple
+        # 4] function type: Storage-Backend
         """Clears CHAP credentials on a 3par volume.
 
         Ignore exceptions caused by the keys not being present on a volume.
@@ -628,6 +664,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
 
     def _create_3par_iscsi_host(self, common, hostname, iscsi_iqn, domain,
                                 persona_id, remote_client=None):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Storage-Backend
         """Create a 3PAR host.
 
         Create a 3PAR host, if there is already a host on the 3par using
@@ -677,12 +717,20 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
             return hostname
 
     def _modify_3par_iscsi_host(self, common, hostname, iscsi_iqn):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Storage-Backend
         mod_request = {'pathOperation': common.client.HOST_EDIT_ADD,
                        'iSCSINames': [iscsi_iqn]}
 
         common.client.modifyHost(hostname, mod_request)
 
     def _set_3par_chaps(self, common, hostname, volume, username, password):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Storage-Backend
         """Sets a 3PAR host's CHAP credentials."""
         if not common._client_conf['hpe3par_iscsi_chap_enabled']:
             return
@@ -695,6 +743,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
 
     def _create_host(self, common, volume, connector,
                      remote_target=None, src_cpg=None, remote_client=None):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls few functions from common.py
+        # 3] dependency type: simple
+        # 4] function type: Storage-Backend
         """Creates or modifies existing 3PAR host."""
         # make sure we don't have the host already
         host = None
@@ -763,6 +815,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
         return host, username, password, cpg
 
     def _do_export(self, common, volume, connector):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls common._get_3par_vol_name
+        # 3] dependency type: simple
+        # 4] function type: Hybrid
         """Gets the associated account, generates CHAP info and updates."""
         model_update = {}
 
@@ -836,6 +892,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
 
     @volume_utils.trace
     def create_export(self, context, volume, connector):
+        # 1] which file calls this: cinder interface
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Cinder-Core
         common = self._login()
         try:
             return self._do_export(common, volume, connector)
@@ -844,6 +904,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
 
     @volume_utils.trace
     def ensure_export(self, context, volume):
+        # 1] which file calls this: cinder interface
+        # 2] cyclic dependency: yes. it calls common._get_3par_vol_name
+        # 3] dependency type: simple
+        # 4] function type: Hybrid
         """Ensure the volume still exists on the 3PAR.
 
         Also retrieves CHAP credentials, if present on the volume
@@ -877,6 +941,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
             self._logout(common)
 
     def _get_least_used_nsp_for_host(self, common, hostname):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls common.build_nsp
+        # 3] dependency type: simple
+        # 4] function type: Hybrid
         """Get the least used NSP for the current host.
 
         Steps to determine which NSP to use.
@@ -907,6 +975,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
         return least_used_nsp
 
     def _get_iscsi_nsps(self, common):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Cinder-Core
         """Return the list of candidate nsps."""
         nsps = []
         iscsi_ips = self.iscsi_ips[common._client_conf['hpe3par_api_url']]
@@ -915,6 +987,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
         return nsps
 
     def _get_ip_using_nsp(self, nsp, common):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: no
+        # 3] dependency type: NA
+        # 4] function type: Cinder-Core
         """Return IP associated with given nsp."""
         iscsi_ips = self.iscsi_ips[common._client_conf['hpe3par_api_url']]
         for (key, value) in iscsi_ips.items():
@@ -922,6 +998,10 @@ class HPE3PARISCSIDriver(hpebasedriver.HPE3PARDriverBase):
                 return key
 
     def _get_least_used_nsp(self, common, vluns, nspss):
+        # 1] which file calls this: local function
+        # 2] cyclic dependency: yes. it calls common.build_nsp
+        # 3] dependency type: simple
+        # 4] function type: Cinder-Core
         """Return the nsp that has the fewest active vluns."""
         # return only the nsp (node:server:port)
         # count the number of nsps
